@@ -31,6 +31,9 @@ func Logger(next http.Handler) http.Handler {
 		start := time.Now()
 		log.Printf("Started %s '%s'", r.Method, r.URL.Path)
 
+		// retrieve requestID
+		requestID := r.Context().Value(KeyRequestID)
+
 		// create logwriter
 		lw := &LogWriter{ResponseWriter: w}
 		next.ServeHTTP(lw, r)
@@ -40,6 +43,10 @@ func Logger(next http.Handler) http.Handler {
 			lw.ResponseWriter.WriteHeader(http.StatusInternalServerError)
 			lw.Write([]byte("500 internal server error"))
 		}
-		log.Printf("Completed '%s' | Latency %v | Status code: %v", r.URL.Path, time.Since(start), lw.status)
+		log.Printf("Completed '%s' | RequestId: %v | Latency: %v | Status code: %v",
+			r.URL.Path,
+			requestID,
+			time.Since(start),
+			lw.status)
 	})
 }

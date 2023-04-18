@@ -29,14 +29,25 @@ func main() {
 	methodmux.Add(http.MethodPost, handlers.DefaultPostHandler)
 	methodmux.Add(http.MethodPut, handlers.DefaultPostHandler)
 	methodmux.Add(http.MethodDelete, handlers.DefaultPostHandler)
-	mux.Handle("/", methodmux)
+	mux.Handle("/handlers", methodmux)
 
+	// create handlers to simulate a panic
 	methodmuxPanic := handlers.NewMethodMux()
 	methodmuxPanic.AddMiddleware(chain)
 	methodmuxPanic.Add(http.MethodGet, handlers.PanicGetHandler)
 	mux.Handle("/panic", methodmuxPanic)
 
+	/*
+		define a default handler for non defined paths
+		***This is necessary because the string "/" in method mux.Handle("/", methodmuxNotFound)
+		is a regular expression that matches any path.***
+	*/
+	methodmuxNotFound := handlers.NewMethodMux()
+	methodmuxNotFound.AddMiddleware(chain)
+	methodmuxNotFound.Add(http.MethodGet, handlers.NoRoute)
+	mux.Handle("/", methodmuxNotFound)
+
 	// listen and serve default server
 	log.Printf("Listening on %s\n", port)
-	http.ListenAndServe(port, mux)
+	log.Fatal(http.ListenAndServe(port, mux))
 }
